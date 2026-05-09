@@ -1,36 +1,46 @@
-import { useRef, useLayoutEffect } from "react";
-
+import { useRef, useLayoutEffect, useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { Box, TextField, Button } from "@mui/material";
+
+import { Box, TextField, Button, Paper, Typography } from "@mui/material";
+
 import ChatMessage from "../../components/chat/Message";
-import { useEffect, useState } from "react";
-import type { Message } from "../../types/notebook";
 import UploadForm from "../../components/form/UploadForm";
+
+import type { Message } from "../../types/notebook";
 
 const ChatPage = () => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const { id } = useParams();
-  const [chatState, setChatState] = useState<{ messages: Message[]; uploadOpen: boolean }>({
+
+  const [chatState, setChatState] = useState<{
+    messages: Message[];
+    uploadOpen: boolean;
+  }>({
     messages: [],
     uploadOpen: false,
   });
 
-
   const [input, setInput] = useState("");
 
   const handleSend = async () => {
-    if (!input) return;
+    if (!input.trim()) return;
+
+    const query = input;
+
     setInput("");
 
     setChatState((prev) => ({
       ...prev,
-      messages: [...prev.messages, { content: input, type: "query" }],
+      messages: [...prev.messages, { content: query, type: "query" }],
     }));
 
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/retrieve`, {
       credentials: "include",
       method: "POST",
-      body: JSON.stringify({ text: input, notebookId: id }),
+      body: JSON.stringify({
+        text: query,
+        notebookId: id,
+      }),
     });
 
     const resBody = await res.json();
@@ -38,23 +48,30 @@ const ChatPage = () => {
     if (resBody) {
       setChatState((prev) => ({
         ...prev,
-        messages: [...prev.messages, { content: resBody.content, type: "response" }]
+        messages: [
+          ...prev.messages,
+          {
+            content: resBody.content,
+            type: "response",
+          },
+        ],
       }));
     }
-
   };
 
   const handleClose = () => {
     setChatState((prev) => ({
       ...prev,
-      uploadOpen: false
+      uploadOpen: false,
     }));
   };
 
   const handleCreate = async (text: string, file?: File) => {
     const formData = new FormData();
+
     formData.append("text", text);
     formData.append("notebookId", id!);
+
     if (file) {
       formData.append("file", file);
     }
@@ -64,11 +81,11 @@ const ChatPage = () => {
       method: "POST",
       body: formData,
     });
+
     const resBody = await res.json();
 
     if (resBody.success) {
       handleClose();
-
     }
   };
 
@@ -76,13 +93,15 @@ const ChatPage = () => {
     const fetchChats = async () => {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/notebook/get/${id}`,
-        { credentials: "include" }
+        {
+          credentials: "include",
+        },
       );
 
       const resBody = await res.json();
 
       setChatState({
-        messages: resBody?.data?.interactions,
+        messages: resBody?.data?.interactions || [],
         uploadOpen: !resBody?.initialIngestDone,
       });
     };
@@ -104,22 +123,130 @@ const ChatPage = () => {
         onSubmit={handleCreate}
       />
 
-      <Box sx={{ height: "60vh", overflow: "auto", mb: 2 }}>
-        {chatState?.messages.map((msg, i) => (
-          <ChatMessage key={i} message={msg} />
-        ))}
-        <div ref={bottomRef} />
-      </Box>
+      <Box
+        sx={{
+          height: "80vh",
+          display: "flex",
+          justifyContent: "center",
 
-      <Box sx={{ display: "flex", gap: 1 }}>
-        <TextField
-          fullWidth
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <Button variant="contained" onClick={handleSend}>
-          Send
-        </Button>
+          px: 2,
+          py: 3,
+        }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            width: "100%",
+            maxWidth: "900px",
+            display: "flex",
+            flexDirection: "column",
+            borderRadius: "24px",
+            overflow: "hidden",
+            border: "1px solid #e5e7eb",
+            bgcolor: "white",
+          }}
+        >
+          <Box
+            sx={{
+              px: 3,
+              py: 2,
+              borderBottom: "1px solid #eee",
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              AI Notebook
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary">
+              Ask questions from your uploaded content
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              flex: 1,
+              overflowY: "auto",
+              px: 3,
+              py: 3,
+              bgcolor: "#fafafa",
+            }}
+          >
+            {chatState.messages.length === 0 && (
+              <Box
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexDirection: "column",
+                  gap: 1,
+                }}
+              >
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  Start a conversation
+                </Typography>
+
+                <Typography color="text.secondary">
+                  Ask anything about your notebook
+                </Typography>
+              </Box>
+            )}
+
+            {chatState.messages.map((msg, i) => (
+              <ChatMessage key={i} message={msg} />
+            ))}
+
+            <div ref={bottomRef} />
+          </Box>
+
+          <Box
+            sx={{
+              p: 2,
+              borderTop: "1px solid #eee",
+              bgcolor: "white",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                alignItems: "center",
+              }}
+            >
+              <TextField
+                fullWidth
+                placeholder="Ask something..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSend();
+                  }
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "14px",
+                    bgcolor: "#f9fafb",
+                  },
+                }}
+              />
+
+              <Button
+                variant="contained"
+                onClick={handleSend}
+                sx={{
+                  borderRadius: "14px",
+                  px: 3,
+                  height: "56px",
+                  textTransform: "none",
+                  boxShadow: "none",
+                }}
+              >
+                Send
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
       </Box>
     </>
   );
