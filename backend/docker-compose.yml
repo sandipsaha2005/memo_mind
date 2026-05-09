@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: memo_mind_backend
+    ports:
+      - "9999:9999"
+    depends_on:
+      - chroma
+      - mongo
+    env_file:
+      - .env
+
+  chroma:
+    image: chromadb/chroma
+    container_name: chroma_db
+    ports:
+      - "8000:8000"
+
+  mongo:
+    image: mongo
+    container_name: mongo_db
+    ports:
+      - "27017:27017"
+
+ 

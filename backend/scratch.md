@@ -1,0 +1,49 @@
+{
+  "text": "In a quiet village near a dense forest, there lived a young boy named Arin who loved exploring nature. Every morning, he would walk along the narrow trails, listening to birds and watching sunlight pass through the tall trees. The villagers often warned him not to go too deep into the forest, as strange things were said to happen there. One day, while chasing a glowing butterfly, Arin wandered farther than usual. The forest became darker and quieter. Suddenly, he discovered an ancient stone structure covered in vines. It looked like a forgotten temple. Curiosity pulled him closer. Inside the structure, Arin found symbols carved into the walls. They seemed to tell a story of an old civilization that once lived in harmony with nature. As he touched one of the symbols, the ground trembled slightly, and a hidden door opened. Behind the door, there was a small chamber filled with glowing crystals. Each crystal emitted a soft hum. When Arin picked one up, he suddenly felt a strange connection with the forest. He could hear whispers - not with his ears, but inside his mind. The whispers guided him out safely, even showing him paths he had never seen before. When he returned to the village, everything felt different. He noticed details he had never seen - the way leaves moved, the subtle sounds of insects, even changes in the wind. Over the next few days, Arin realized he had gained an unusual ability. He could sense danger before it happened. Once, he stopped a villager from entering the forest just moments before a large tree collapsed in that exact spot. News spread quickly, and people began to see Arin differently. Some believed he was gifted, while others feared the unknown power he possessed. The village elder called him for a meeting and asked him to explain what had happened. Arin described the temple, the crystals, and the whispers. The elder listened carefully and revealed that the forest was once protected by guardians, and perhaps Arin had been chosen to carry that legacy forward. As time passed, Arin learned to control his abilities. He used them to protect the village and maintain balance in the forest. He no longer wandered aimlessly - now, he walked with purpose. Years later, travelers would visit the village and hear stories of a silent guardian who could communicate with nature itself. Some said it was magic, others said it was science yet to be understood. But Arin knew the truth - the forest was alive, and he was now a part of it."
+}
+
+Query ->
+
+Who is the main character in the story?
+Where did Arin live?
+What did Arin love to do every morning?
+What did the villagers warn Arin about?
+What did Arin chase into the forest?
+
+
+What did Arin discover inside the forest?
+What was inside the hidden chamber?
+What happened when Arin touched the crystal?
+What new ability did Arin gain?
+How did Arin help a villager later?
+
+Why did people start seeing Arin differently?
+Who explained the truth about the forest to Arin?
+What was special about the ancient temple?
+How did Arin use his powers after that?
+What did the whispers do?
+
+
+things to do.
+
+1: Create notebook
+ - take notebook name.
+ - backend (id, isInitialIngestDone, ingest count).
+ 
+
+2: if isInitialIngestDone false then show dialog to ingest data
+ - call ingest endpoint.
+ - on successfull ingest show user you can ask question about it.
+
+3: if question comes 
+ - call query endpoint.
+ - show response.
+
+ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGE0Jhuprx6LLweH/OG1p86FdWlPMggUfV05Q4Dpfoli
+
+
+free models
+"google/gemma-4-26b-a4b-it"
+"meta-llama/llama-3.1-8b-instruct:free"
+"mistralai/mistral-7b-instruct:free"
+"microsoft/phi-3-mini-128k-instruct:free"
