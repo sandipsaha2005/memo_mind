@@ -1,5 +1,5 @@
 import { Collection } from "mongodb";
-import type { LoginBody, UserSchema } from "../types/types.ts";
+import type { LoginBody, UserSchema } from "../shared/types/types.ts";
 
 export class MongoAuthController {
   private collection;

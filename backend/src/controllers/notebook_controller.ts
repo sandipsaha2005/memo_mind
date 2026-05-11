@@ -1,7 +1,7 @@
-import { Collection, ObjectId } from "mongodb";
-import type { Interaction, Notebook } from "../types/types.ts";
+import { Collection, ObjectId, WithId } from "mongodb";
+import type { Interaction, Notebook } from "../shared/types/types.ts";
 
-export class MongoNotebookController {
+export class NotebookController {
   private notebookCollection;
   private interactionCollection;
 
@@ -72,14 +72,26 @@ export class MongoNotebookController {
       _id: new ObjectId(notebookId),
     });
 
-    const interactions =await this.interactionCollection.find({
+    const interactions = await this.interactionCollection.find({
       notebookId: notebookId,
     }).toArray();
-    
 
     return {
       interactions,
       initialIngestDone: notebook?.isInitialIngestDone,
     };
+  }
+
+  async deleteNoteBook(notebookId: string) {
+    const deleted: WithId<Notebook> | null = await this.notebookCollection
+      .findOneAndDelete({
+        _id: new ObjectId(notebookId),
+      });
+
+    await this.interactionCollection.deleteMany({
+      notebookId: notebookId,
+    });
+
+    return deleted;
   }
 }

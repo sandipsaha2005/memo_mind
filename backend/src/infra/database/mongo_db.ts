@@ -1,6 +1,6 @@
 import { Db, MongoClient } from "mongodb";
 
-const client = new MongoClient("mongodb://mongo:27017");
+const client = new MongoClient(Deno.env.get("MONGO_URL")!);
 
 let db: Db;
 

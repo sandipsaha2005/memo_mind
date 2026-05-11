@@ -1,15 +1,30 @@
-import { Card, Typography, Box } from "@mui/material";
-
+import { Card, Typography, Box, Button } from "@mui/material";
 import { useNavigate } from "react-router";
 
 import type { Notebook } from "../../types/notebook";
 
-const NotebookCard = ({ notebook }: { notebook: Notebook }) => {
+const NotebookCard = ({ notebook, deleteNotebook }: { notebook: Notebook, deleteNotebook: (id: string) => void }) => {
   const navigate = useNavigate();
+
+
+
+  const formatDate = (dateString: string) => {
+
+    const date = new Date(dateString);
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+
+    });
+  };
 
   return (
     <Card
-      onClick={() => navigate(`/notebook/${notebook._id}`)}
+
       sx={{
         cursor: "pointer",
         borderRadius: "24px",
@@ -28,7 +43,14 @@ const NotebookCard = ({ notebook }: { notebook: Notebook }) => {
         },
       }}
     >
-      <Box>
+      <Box
+        onClick={() => navigate(`/notebook/${notebook._id}`)}
+        sx={{
+          ":hover": {
+            textDecoration: 'underline'
+          }
+        }}
+      >
         <Typography
           variant="h6"
           sx={{
@@ -37,7 +59,9 @@ const NotebookCard = ({ notebook }: { notebook: Notebook }) => {
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
+
           }}
+
         >
           {notebook.name}
         </Typography>
@@ -53,14 +77,18 @@ const NotebookCard = ({ notebook }: { notebook: Notebook }) => {
         </Typography>
       </Box>
 
-      <Box>
-        <Typography variant="caption" color="text.secondary">
-          Created at
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Box sx={{ display: "flex", flexDirection: 'column' }}>
+          <Typography variant="caption" color="text.secondary">
+            Created at
+          </Typography>
 
-        <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 600 }}>
-          {notebook.timestamp}
-        </Typography>
+          <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 600 }}>
+            {formatDate(notebook.timestamp)}
+          </Typography>
+        </Box>
+
+        <Button variant="outlined" color="error" onClick={() => deleteNotebook(notebook._id)}>Delete</Button>
       </Box>
     </Card>
   );

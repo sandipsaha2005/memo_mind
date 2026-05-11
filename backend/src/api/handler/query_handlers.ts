@@ -1,0 +1,98 @@
+import { Context } from "hono";
+import { AppError } from "../../shared/errors/error.ts";
+import { RequestBody } from "../../shared/types/types.ts";
+import { NotebookController } from "../../controllers/notebook_controller.ts";
+import { generateResponse } from "../../services/rag/response_generator.ts";
+import { RetrievalController } from "../../controllers/retrieval_controller.ts";
+import { IngestionController } from "../../controllers/ingestion_controller.ts";
+
+export const ingestionHandler = async (c: Context) => {
+  const ingestionController: IngestionController = c.get("ingestionController");
+  const jwtPayload = c.get("jwtPayload") as { id: string };
+  const controller: NotebookController = c.get("noteBookController");
+
+  try {
+    const body = await c.req.formData();
+    const payload = {
+      text: body.get("text") as string,
+      notebookId: body.get("notebookId") as string,
+      userId: jwtPayload.id!,
+    };
+
+    ingestionController.ingest(payload);
+
+    await controller.updateNotebook(body?.get("notebookId") as string);
+    return c.json({
+      success: true,
+      message: "Embeddings generated successfully",
+    });
+  } catch (error: unknown) {
+    if (error instanceof AppError) {
+      return c.json(
+        { success: false, message: error.message },
+        400,
+      );
+    }
+    console.log(error);
+    return c.json(
+      { success: false, message: "Something went wrong" },
+      500,
+    );
+  }
+};
+
+export const retrievalHandler = async (c: Context) => {
+  const retrievalController: RetrievalController = c.get("retrievalController");
+  const controller: NotebookController = c.get("noteBookController");
+  const jwtPayload = c.get("jwtPayload") as { id: string };
+
+  try {
+    const body: RequestBody = await c.req.json();
+
+    await controller.addInteraction({
+      type: "query",
+      content: body.text,
+      timestamp: new Date(),
+      notebookId: body.notebookId,
+    });
+
+    const results = await retrievalController.retrieve(body, jwtPayload.id);
+
+    const { interactions } = await controller.getNoteBook(
+      body.notebookId,
+    );
+
+    const content = await generateResponse(
+      body.text,
+      results.documents[0] as string[],
+      interactions,
+    );
+
+    await controller.addInteraction({
+      type: "response",
+      content: content.content,
+      timestamp: new Date(),
+      notebookId: body.notebookId,
+    });
+
+    return c.json({
+      success: true,
+      message: "Matching statements",
+      content: content.content,
+      query: body.text,
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return c.json(
+        { success: false, message: error.message },
+        400,
+      );
+    }
+    console.log(error);
+
+    return c.json(
+      { success: false, message: "Something went wrong" },
+      500,
+    );
+  }
+};

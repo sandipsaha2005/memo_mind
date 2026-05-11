@@ -1,4 +1,4 @@
-import { Chunk, Memory, RetrievedChunks } from "../types/types.ts";
+import { Chunk, Memory, RetrievedChunks } from "../../shared/types/types.ts";
 
 const sumOfSqr = (values: number[]) =>
   values.reduce((value, number) => value + number * number, 0);

@@ -10,7 +10,7 @@ services:
       - chroma
       - mongo
     env_file:
-      - .env
+      - .env.stage
 
   chroma:
     image: chromadb/chroma

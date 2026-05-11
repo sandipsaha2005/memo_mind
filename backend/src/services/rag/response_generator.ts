@@ -1,37 +1,7 @@
-import { openRouterClient } from "../lib/open_router_config.ts";
-
-export const generateResponse = async (question: string, chunks: string[]) => {
-  const context = chunks.join("\n\n");
-
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${
-      Deno.env.get("GEMINI_API_KEY2")
-    }`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{
-            text: `Answer the user's question using only the context below.
-                   If the answer is not in the context, say "I don't know".
-                   
-                   Context:
-                   ${context}`,
-          }],
-        },
-        contents: [{
-          parts: [{ text: question }],
-        }],
-      }),
-    },
-  );
-
-  const data = await res.json();
-  console.log(data);
-
-  return data.candidates[0].content.parts[0].text;
-};
+import { WithId } from "mongodb";
+import { openRouterClient } from "../../infra/clients/open_router.ts";
+import { Interaction } from "../../shared/types/types.ts";
+import { ChatMessages } from "@openrouter/sdk/models";
 
 export const generateResponseUsingOllama = async (
   question: string,
@@ -64,13 +34,21 @@ export const generateResponseUsingOllama = async (
   return data.message.content;
 };
 
-export const generateResponseUsingOpenRouter = async (
+export const generateResponse = async (
   question: string,
   chunks: string[],
+  interactions: WithId<Interaction>[],
 ) => {
+  const chatHistory: ChatMessages[] = interactions
+    .slice(-10)
+    .map(({ type, content }) => ({
+      role: type === "query" ? "user" : "assistant",
+      content: content,
+    }));
+
   const completion = await openRouterClient.chat.send({
     chatRequest: {
-      maxTokens: 1000, // increase this, 100 is too low for RAG responses
+      maxTokens: 1000,
       model: "google/gemma-4-26b-a4b-it",
       messages: [
         {
@@ -81,6 +59,7 @@ export const generateResponseUsingOpenRouter = async (
                     Context:
                     ${chunks.join("\n\n")}`,
         },
+        ...chatHistory,
         {
           role: "user",
           content: question,

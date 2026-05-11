@@ -1,7 +1,7 @@
 import { Context } from "hono";
 import { sign } from "hono/jwt";
 import { setCookie } from "hono/cookie";
-import { MongoAuthController } from "../controllers/auth_controller.ts";
+import { MongoAuthController } from "../../controllers/auth_controller.ts";
 
 export const loginHandler = async (c: Context) => {
   const authController: MongoAuthController = c.get("authController");
