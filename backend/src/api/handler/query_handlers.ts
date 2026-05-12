@@ -56,7 +56,7 @@ export const retrievalHandler = async (c: Context) => {
       notebookId: body.notebookId,
     });
 
-    const results = await retrievalController.retrieve(body, jwtPayload.id);
+    const chunks = await retrievalController.retrieve(body, jwtPayload.id);
 
     const { interactions } = await controller.getNoteBook(
       body.notebookId,
@@ -64,7 +64,7 @@ export const retrievalHandler = async (c: Context) => {
 
     const content = await generateResponse(
       body.text,
-      results.documents[0] as string[],
+      chunks,
       interactions,
     );
 
@@ -77,7 +77,7 @@ export const retrievalHandler = async (c: Context) => {
 
     return c.json({
       success: true,
-      message: "Matching statements",
+      message: "Successfully returned Response",
       content: content.content,
       query: body.text,
     });

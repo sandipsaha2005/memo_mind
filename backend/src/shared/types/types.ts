@@ -24,7 +24,7 @@ export type Interaction = {
   type: "query" | "response";
   content: string;
   timestamp: Date;
-  notebookId: string
+  notebookId: string;
 };
 
 export type Notebook = {
@@ -66,3 +66,7 @@ export type RetrievedChunks = {
   similarity: number;
   text: string;
 };
+
+export type EvaluationResult =
+  | { sufficient: true }
+  | { sufficient: false; followUpQuery: string[] };
