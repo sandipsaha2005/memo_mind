@@ -1,6 +1,6 @@
 import { generateEmbedding } from "@logan/libsql-search";
 import type { Chunk } from "../../shared/types/types.ts";
-import { chunk } from "@std/collections/chunk";
+
 
 export const generate = async (text: string[]): Promise<Chunk[]> => {
   const embeddings: Chunk[] = [];
