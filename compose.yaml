@@ -6,7 +6,7 @@ services:
     container_name: memo_mind_frontend
 
     ports:
-      - "3000:4173"
+      - "3000:80"
 
     networks:
       - front-tier
