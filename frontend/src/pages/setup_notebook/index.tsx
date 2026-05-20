@@ -13,7 +13,7 @@ const CreateNoteBook = () => {
     console.log(resBody);
   };
 
-  return <UploadForm onSubmit={handleCreate} />;
+  return <UploadForm onSubmit={handleCreate} open={ false} handleClose={() => {}}/>;
 };
 
 export default CreateNoteBook;

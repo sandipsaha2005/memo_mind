@@ -1,6 +1,7 @@
 import "@std/dotenv/load";
 import { Context, Hono } from "hono";
 import type { JwtVariables } from "hono/jwt";
+import { logger } from 'hono/logger'
 import notebookRouter from "./api/routes/notebook_router.ts";
 import middlewares from "./api/middleware/index.ts";
 import {
@@ -23,6 +24,8 @@ export const createApp = (
 
   app.use("*", middlewares.cors);
   app.use("/api/*", middlewares.jwt);
+  
+  app.use(logger());
 
   app.use("*", (c: Context, next) => {
     c.set("authController", authController);

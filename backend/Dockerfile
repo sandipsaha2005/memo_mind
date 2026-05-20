@@ -1,6 +1,14 @@
 FROM denoland/deno:latest
 
 WORKDIR /app
+
+COPY deno.json .
+COPY deno.lock .
+
+RUN deno install
+
 COPY . .
-RUN deno cache main.ts
-CMD ["deno", "run", "--allow-ffi", "--allow-net", "--allow-env", "--allow-read", "--allow-sys", "main.ts"]
+
+EXPOSE 9999
+
+CMD ["deno", "task", "dev"]
