@@ -1,6 +1,7 @@
 {
   "tasks": {
-    "dev": "deno run --watch --allow-ffi --allow-net --allow-env --allow-read --allow-sys main.ts"
+    "dev": "deno run --watch --allow-ffi --allow-net --allow-env --allow-read --allow-sys main.ts",
+    "start": "deno run --allow-ffi --allow-net --allow-env --allow-read --allow-sys main.ts"
   },
   "imports": {
     "@logan/libsql-search": "jsr:@logan/libsql-search@^0.1.3",

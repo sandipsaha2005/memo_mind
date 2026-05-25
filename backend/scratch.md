@@ -47,3 +47,10 @@ free models
 "meta-llama/llama-3.1-8b-instruct:free"
 "mistralai/mistral-7b-instruct:free"
 "microsoft/phi-3-mini-128k-instruct:free"
+
+
+
+bugs 
+-> { query: "who is Arin context" }
+
+error -> Expected embeddings to be an array with at least one item

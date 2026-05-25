@@ -19,7 +19,8 @@ services:
     build:
       context: ./backend
 
-    container_name: memo_mind_backend
+    deploy:
+      replicas: 3
 
     networks:
       - back-tier

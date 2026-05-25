@@ -11,4 +11,4 @@ COPY . .
 
 EXPOSE 9999
 
-CMD ["deno", "task", "dev"]
+CMD ["deno", "task", "start"]
