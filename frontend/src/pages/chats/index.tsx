@@ -26,36 +26,48 @@ const ChatPage = () => {
     if (!input.trim()) return;
 
     const query = input;
-
     setInput("");
 
     setChatState((prev) => ({
       ...prev,
-      messages: [...prev.messages, { content: query, type: "query" }],
+      messages: [
+        ...prev.messages,
+        { content: query, type: "query" },
+        { content: "", type: "response" },
+      ],
     }));
 
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/retrieve`, {
       credentials: "include",
       method: "POST",
-      body: JSON.stringify({
-        text: query,
-        notebookId: id,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: query, notebookId: id }),
     });
 
-    const resBody = await res.json();
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
 
-    if (resBody) {
-      setChatState((prev) => ({
-        ...prev,
-        messages: [
-          ...prev.messages,
-          {
-            content: resBody.content,
-            type: "response",
-          },
-        ],
-      }));
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const text = decoder.decode(value);
+      const events = text.split("\n\n").filter(Boolean);
+
+      for (const event of events) {
+        const lines = event.split("\n");
+        const eventType = lines.find((l) => l.startsWith("event: "))?.slice(7);
+        const data = lines.find((l) => l.startsWith("data: "))?.slice(6);
+
+        if (eventType === "content" && data) {
+          setChatState((prev) => {
+            const msgs = [...prev.messages];
+            const last = msgs[msgs.length - 1];
+            msgs[msgs.length - 1] = { ...last, content: last.content + data };
+            return { ...prev, messages: msgs };
+          });
+        }
+      }
     }
   };
 

@@ -47,7 +47,8 @@ services:
     image: mongo
 
     container_name: mongo_db
-
+    ports:
+      - "5000:27017"
     networks:
       - back-tier
 

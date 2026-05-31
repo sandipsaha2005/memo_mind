@@ -3,7 +3,8 @@ import { PdfReader } from "pdfreader";
 import { AppError } from "../../shared/errors/error.ts";
 import { RequestBody } from "../../shared/types/types.ts";
 import { NotebookController } from "../../controllers/notebook_controller.ts";
-import { generateResponse } from "../../services/rag/response_generator.ts";
+import { generateResponseStream } from "../../services/rag/response_generator.ts";
+import { streamSSE } from "hono/streaming";
 import { RetrievalController } from "../../controllers/retrieval_controller.ts";
 import { IngestionController } from "../../controllers/ingestion_controller.ts";
 import { Buffer } from "node:buffer";
@@ -72,29 +73,38 @@ export const retrievalHandler = async (c: Context) => {
     });
 
     const chunks = await retrievalController.retrieve(body, jwtPayload.id);
-
-    const { interactions } = await controller.getNoteBook(
-      body.notebookId,
-    );
-
-    const content = await generateResponse(
+    const { interactions } = await controller.getNoteBook(body.notebookId);
+    const eventStream = await generateResponseStream(
       body.text,
       chunks,
       interactions,
     );
 
-    await controller.addInteraction({
-      type: "response",
-      content: content.content,
-      timestamp: new Date(),
-      notebookId: body.notebookId,
-    });
+    return streamSSE(c, async (stream) => {
+      let fullContent = "";
 
-    return c.json({
-      success: true,
-      message: "Successfully returned Response",
-      content: content.content,
-      query: body.text,
+      for await (const chunk of eventStream) {
+        const delta = chunk.choices[0]?.delta?.content;
+        if (delta) {
+          fullContent += delta;
+          await stream.writeSSE({ event: "content", data: delta });
+        }
+      }
+
+      await controller.addInteraction({
+        type: "response",
+        content: fullContent,
+        timestamp: new Date(),
+        notebookId: body.notebookId,
+      });
+
+      await stream.writeSSE({
+        event: "done",
+        data: JSON.stringify({ success: true, query: body.text }),
+      });
+    }, async (err, stream) => {
+      console.log(err);
+      await stream.writeSSE({ event: "error", data: err.message });
     });
   } catch (error) {
     if (error instanceof AppError) {
@@ -104,7 +114,6 @@ export const retrievalHandler = async (c: Context) => {
       );
     }
     console.log(error);
-
     return c.json(
       { success: false, message: "Something went wrong" },
       500,
