@@ -1,5 +1,4 @@
 import { Context } from "hono";
-import { PdfReader } from "pdfreader";
 import { AppError } from "../../shared/errors/error.ts";
 import { RequestBody } from "../../shared/types/types.ts";
 import { NotebookController } from "../../controllers/notebook_controller.ts";
@@ -23,17 +22,7 @@ export const ingestionHandler = async (c: Context) => {
       userId: jwtPayload.id!,
     };
 
-    const file = body.get("file");
-
-    if (file instanceof File) {
-      const arrayBugger = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBugger);
-      new PdfReader().parseBuffer(buffer, (err, item) => {
-        if (err) console.log(err);
-        else if (!item) console.log("Item is empty");
-        else if (item) console.log(item.text);
-      });
-    }
+    
 
     ingestionController.ingest(payload);
 

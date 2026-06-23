@@ -2,56 +2,43 @@ services:
   frontend:
     build:
       context: ./frontend
-
     container_name: memo_mind_frontend
-
     ports:
       - "3000:80"
-
     networks:
       - front-tier
       - back-tier
-
     depends_on:
       - backend
 
   backend:
     build:
       context: ./backend
-
     deploy:
       replicas: 3
-
     networks:
       - back-tier
-
     depends_on:
       - chroma
       - mongo
-
     env_file:
       - ./backend/.env.stage
 
   chroma:
     image: chromadb/chroma
-
     container_name: chroma_db
-
     networks:
       - back-tier
-
     volumes:
       - chroma_data:/chroma/chroma
 
   mongo:
     image: mongo
-
     container_name: mongo_db
     ports:
       - "5000:27017"
     networks:
       - back-tier
-
     volumes:
       - mongo_data:/data/db
 
