@@ -1,12 +1,12 @@
 import { Context } from "hono";
-import { AppError } from "../../shared/errors/error.ts";
+import { AppError, BadRequestError } from "../../shared/errors/error.ts";
 import { RequestBody } from "../../shared/types/types.ts";
 import { NotebookController } from "../../controllers/notebook_controller.ts";
 import { generateResponseStream } from "../../services/rag/response_generator.ts";
 import { streamSSE } from "hono/streaming";
 import { RetrievalController } from "../../controllers/retrieval_controller.ts";
 import { IngestionController } from "../../controllers/ingestion_controller.ts";
-import { Buffer } from "node:buffer";
+
 
 export const ingestionHandler = async (c: Context) => {
   const ingestionController: IngestionController = c.get("ingestionController");
@@ -16,17 +16,36 @@ export const ingestionHandler = async (c: Context) => {
   try {
     const body = await c.req.formData();
 
+    const notebookId = body.get("notebookId") as string;
+    const file = body.get("file") as File | null;
+    let text: string;
+
+    if (file) {
+      const isTextFile = file.type === "text/plain" || file.name.endsWith(".txt");
+      if (!isTextFile) {
+        throw new BadRequestError("Only .txt files are allowed");
+      }
+      text = await file.text();
+      if (!text.trim()) {
+        throw new BadRequestError("Empty files are not allowed");
+      }
+    } else {
+      const rawText = body.get("text") as string;
+      if (!rawText?.trim()) {
+        throw new BadRequestError("Text input cannot be empty");
+      }
+      text = rawText;
+    }
+
     const payload = {
-      text: body.get("text") as string,
-      notebookId: body.get("notebookId") as string,
+      text,
+      notebookId,
       userId: jwtPayload.id!,
     };
 
-    
+    await ingestionController.ingest(payload);
 
-    ingestionController.ingest(payload);
-
-    await controller.updateNotebook(body?.get("notebookId") as string);
+    await controller.updateNotebook(notebookId);
     return c.json({
       success: true,
       message: "Embeddings generated successfully",

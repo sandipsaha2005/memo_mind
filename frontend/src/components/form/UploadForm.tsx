@@ -86,8 +86,8 @@ const UploadForm = ({ onSubmit, open, handleClose }: Props) => {
                 py: 1.2,
               }}
             >
-              Upload PDF
-              <input type="file" name="file" hidden accept=".pdf" />
+              Upload File
+              <input type="file" name="file" hidden accept=".txt" />
             </Button>
           </Box>
 
