@@ -37,7 +37,8 @@ export class RetrievalController {
 
   async search(body: RequestBody, userId: string) {
     const tokenizedQuery = tokenize(body.text);
-    const queryEmbeddings = await generate(tokenizedQuery);
+    const chunksToEmbed = tokenizedQuery.length > 0 ? tokenizedQuery : [body.text.trim()];
+    const queryEmbeddings = await generate(chunksToEmbed);
 
     const results = await this.documents.query({
       queryEmbeddings: queryEmbeddings.map(({ embedding }) => embedding),

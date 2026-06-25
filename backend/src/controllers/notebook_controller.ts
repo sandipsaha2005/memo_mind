@@ -1,5 +1,5 @@
 import { Collection, ObjectId, WithId } from "mongodb";
-import type { Interaction, Notebook } from "../shared/types/types.ts";
+import type { Interaction, Notebook, Source } from "../shared/types/types.ts";
 
 export class NotebookController {
   private notebookCollection;
@@ -46,9 +46,17 @@ export class NotebookController {
       isInitialIngestDone: false,
       ingestCount: 0,
       interactions: [],
+      sources: [],
     };
     const { insertedId } = await this.notebookCollection.insertOne(payload);
     return insertedId;
+  }
+
+  async addSource(notebookId: string, source: Source) {
+    await this.notebookCollection.updateOne(
+      { _id: new ObjectId(notebookId) },
+      { $push: { sources: source } },
+    );
   }
 
   getAllNotebook(id: string) {
@@ -79,6 +87,7 @@ export class NotebookController {
     return {
       interactions,
       initialIngestDone: notebook?.isInitialIngestDone,
+      sources: notebook?.sources ?? [],
     };
   }
 

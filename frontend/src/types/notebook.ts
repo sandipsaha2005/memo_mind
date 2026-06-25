@@ -8,3 +8,10 @@ export interface Message {
   type: "query" | "response";
   content: string;
 }
+
+export interface Source {
+  id: string;
+  name: string;
+  type: "file" | "text";
+  pending?: boolean;
+}

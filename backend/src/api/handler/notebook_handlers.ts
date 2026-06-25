@@ -55,6 +55,8 @@ export const getNotebookHandler = async (c: Context) => {
     const id = c.req.param("id")!;
     const notebook = await controller.getNoteBook(id);
 
+    console.log({ notebook });
+
     return c.json({
       success: true,
       message: "Notebook fetched successfully",

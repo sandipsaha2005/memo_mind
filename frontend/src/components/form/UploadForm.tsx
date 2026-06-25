@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 
 interface Props {
-  onSubmit: (text: string, file?: File) => void;
+  onSubmit: (text: string, file?: File, sourceName?: string) => void;
   open: boolean;
   handleClose: () => void;
 }
@@ -21,25 +21,13 @@ const UploadForm = ({ onSubmit, open, handleClose }: Props) => {
     const formData = new FormData(e.currentTarget);
 
     const text = formData.get("text") as string;
-    const file = formData.get("file") as File;
-
-    onSubmit(text, file);
+    const fileEntry = formData.get("file") as File;
+    const file = fileEntry.size > 0 ? fileEntry : null;
+    const sourceName = (formData.get("sourceName") as string)?.trim();
+    onSubmit(text, file, sourceName);
   };
-
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="sm"
-      fullWidth
-
-      // PaperProps={{
-      //   sx: {
-      //     borderRadius: "24px",
-      //     p: 1,
-      //   },
-      // }}
-    >
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           Create Notebook
@@ -61,6 +49,18 @@ const UploadForm = ({ onSubmit, open, handleClose }: Props) => {
             mt: 1,
           }}
         >
+          <TextField
+            name="sourceName"
+            label="Source name (optional)"
+            fullWidth
+            placeholder="e.g. Lecture notes, Chapter 1..."
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "16px",
+              },
+            }}
+          />
+
           <TextField
             name="text"
             label="Paste content"

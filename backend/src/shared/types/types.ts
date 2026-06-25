@@ -27,12 +27,18 @@ export type Interaction = {
   notebookId: string;
 };
 
+export type Source = {
+  name: string;
+  type: "file" | "text";
+};
+
 export type Notebook = {
   name: string;
   userId: ObjectId;
   isInitialIngestDone: boolean;
   ingestCount: number;
   interactions: Interaction[];
+  sources: Source[];
   timestamp: Date;
 };
 

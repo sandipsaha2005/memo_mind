@@ -18,7 +18,9 @@ export const ingestionHandler = async (c: Context) => {
 
     const notebookId = body.get("notebookId") as string;
     const file = body.get("file") as File | null;
+    const sourceName = (body.get("sourceName") as string | null)?.trim();
     let text: string;
+    let source: { name: string; type: "file" | "text" };
 
     if (file) {
       const isTextFile = file.type === "text/plain" || file.name.endsWith(".txt");
@@ -29,12 +31,14 @@ export const ingestionHandler = async (c: Context) => {
       if (!text.trim()) {
         throw new BadRequestError("Empty files are not allowed");
       }
+      source = { name: sourceName || file.name, type: "file" };
     } else {
       const rawText = body.get("text") as string;
       if (!rawText?.trim()) {
         throw new BadRequestError("Text input cannot be empty");
       }
       text = rawText;
+      source = { name: sourceName || "Untitled text", type: "text" };
     }
 
     const payload = {
@@ -46,6 +50,7 @@ export const ingestionHandler = async (c: Context) => {
     await ingestionController.ingest(payload);
 
     await controller.updateNotebook(notebookId);
+    await controller.addSource(notebookId, source);
     return c.json({
       success: true,
       message: "Embeddings generated successfully",

@@ -6,8 +6,9 @@ import { Box, TextField, Button, Paper, Typography } from "@mui/material";
 
 import ChatMessage from "../../components/chat/Message";
 import UploadForm from "../../components/form/UploadForm";
+import SourcesPanel from "../../components/card/SourcesPanel";
 
-import type { Message } from "../../types/notebook";
+import type { Message, Source } from "../../types/notebook";
 
 const ChatPage = () => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -16,9 +17,13 @@ const ChatPage = () => {
   const [chatState, setChatState] = useState<{
     messages: Message[];
     uploadOpen: boolean;
+    sources: Source[];
+    sidebarCollapsed: boolean;
   }>({
     messages: [],
     uploadOpen: false,
+    sources: [],
+    sidebarCollapsed: false,
   });
 
   const [input, setInput] = useState("");
@@ -78,25 +83,81 @@ const ChatPage = () => {
     }));
   };
 
-  const handleCreate = async (text: string, file?: File) => {
+  const handleOpenUpload = () => {
+    setChatState((prev) => ({
+      ...prev,
+      uploadOpen: true,
+    }));
+  };
+
+  const handleToggleSidebar = () => {
+    setChatState((prev) => ({
+      ...prev,
+      sidebarCollapsed: !prev.sidebarCollapsed,
+    }));
+  };
+
+  const handleCreate = async (text: string, file?: File, sourceName?: string) => {
+    const sourceId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    let resolvedName: string;
+    if (file) {
+      resolvedName = sourceName || file.name;
+    } else {
+      const textCount = chatState.sources.filter(
+        (s) => s.type === "text",
+      ).length;
+      resolvedName = sourceName || `Text ${textCount + 1}`;
+    }
+
+    const optimisticSource: Source = {
+      id: sourceId,
+      name: resolvedName,
+      type: file ? "file" : "text",
+      pending: true,
+    };
+
+    setChatState((prev) => ({
+      ...prev,
+      uploadOpen: false,
+      sources: [...prev.sources, optimisticSource],
+    }));
+
     const formData = new FormData();
 
     formData.append("text", text);
     formData.append("notebookId", id!);
+    formData.append("sourceName", resolvedName);
 
     if (file) {
+      console.log("file present", file);
+      
       formData.append("file", file);
     }
 
-    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/ingest`, {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/ingest`, {
+        method: "POST",
+        body: formData,
+      });
 
-    const resBody = await res.json();
+      const resBody = await res.json();
 
-    if (resBody.success) {
-      handleClose();
+      if (resBody.success) {
+        setChatState((prev) => ({
+          ...prev,
+          sources: prev.sources.map((s) =>
+            s.id === sourceId ? { ...s, pending: false } : s,
+          ),
+        }));
+      } else {
+        throw new Error(resBody.message || "Ingest failed");
+      }
+    } catch {
+      setChatState((prev) => ({
+        ...prev,
+        sources: prev.sources.filter((s) => s.id !== sourceId),
+      }));
     }
   };
 
@@ -108,9 +169,19 @@ const ChatPage = () => {
 
       const resBody = await res.json();
 
+      const sources: Source[] = (resBody?.data?.sources || []).map(
+        (s: { name: string; type: "file" | "text" }, i: number) => ({
+          id: `${i}-${s.name}`,
+          name: s.name,
+          type: s.type,
+        }),
+      );
+
       setChatState({
         messages: resBody?.data?.interactions || [],
-        uploadOpen: !resBody?.initialIngestDone,
+        uploadOpen: !resBody?.data?.initialIngestDone,
+        sources,
+        sidebarCollapsed: false,
       });
     };
 
@@ -136,15 +207,23 @@ const ChatPage = () => {
           height: "80vh",
           display: "flex",
           justifyContent: "center",
+          gap: 2,
 
           px: 2,
           py: 3,
         }}
       >
+        <SourcesPanel
+          sources={chatState.sources}
+          collapsed={chatState.sidebarCollapsed}
+          onToggleCollapse={handleToggleSidebar}
+          onAdd={handleOpenUpload}
+        />
+
         <Paper
           elevation={0}
           sx={{
-            width: "100%",
+            flex: 1,
             maxWidth: "900px",
             display: "flex",
             flexDirection: "column",
