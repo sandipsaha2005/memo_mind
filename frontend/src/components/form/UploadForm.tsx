@@ -22,7 +22,7 @@ const UploadForm = ({ onSubmit, open, handleClose }: Props) => {
 
     const text = formData.get("text") as string;
     const fileEntry = formData.get("file") as File;
-    const file = fileEntry.size > 0 ? fileEntry : null;
+    const file = fileEntry.size > 0 ? fileEntry : undefined;
     const sourceName = (formData.get("sourceName") as string)?.trim();
     onSubmit(text, file, sourceName);
   };

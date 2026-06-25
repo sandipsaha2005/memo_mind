@@ -1,13 +1,11 @@
 import { useRef, useLayoutEffect, useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { apiFetch } from "../../utils/apiFetch";
-
 import { Box, TextField, Button, Paper, Typography } from "@mui/material";
 
 import ChatMessage from "../../components/chat/Message";
 import UploadForm from "../../components/form/UploadForm";
 import SourcesPanel from "../../components/card/SourcesPanel";
-
+import { apiFetch } from "../../utils/apiFetch";
 import type { Message, Source } from "../../types/notebook";
 
 const ChatPage = () => {
@@ -28,28 +26,10 @@ const ChatPage = () => {
 
   const [input, setInput] = useState("");
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-
-    const query = input;
-    setInput("");
-
-    setChatState((prev) => ({
-      ...prev,
-      messages: [
-        ...prev.messages,
-        { content: query, type: "query" },
-        { content: "", type: "response" },
-      ],
-    }));
-
-    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/retrieve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: query, notebookId: id }),
-    });
-
-    const reader = res.body!.getReader();
+  const renderStream = async (
+    stream: ReadableStream<Uint8Array<ArrayBuffer>>,
+  ) => {
+    const reader = stream.getReader();
     const decoder = new TextDecoder();
 
     while (true) {
@@ -76,6 +56,30 @@ const ChatPage = () => {
     }
   };
 
+  const handleSend = async () => {
+    if (!input.trim()) return;
+
+    const query = input;
+    setInput("");
+
+    setChatState((prev) => ({
+      ...prev,
+      messages: [
+        ...prev.messages,
+        { content: query, type: "query" },
+        { content: "", type: "response" },
+      ],
+    }));
+
+    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/retrieve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: query, notebookId: id }),
+    });
+
+    renderStream(res.body!);
+  };
+
   const handleClose = () => {
     setChatState((prev) => ({
       ...prev,
@@ -97,7 +101,11 @@ const ChatPage = () => {
     }));
   };
 
-  const handleCreate = async (text: string, file?: File, sourceName?: string) => {
+  const handleCreate = async (
+    text: string,
+    file?: File,
+    sourceName?: string,
+  ) => {
     const sourceId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
     let resolvedName: string;
@@ -131,7 +139,7 @@ const ChatPage = () => {
 
     if (file) {
       console.log("file present", file);
-      
+
       formData.append("file", file);
     }
 
