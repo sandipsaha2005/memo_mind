@@ -54,3 +54,8 @@ bugs
 -> { query: "who is Arin context" }
 
 error -> Expected embeddings to be an array with at least one item
+
+
+
+docker compose -f compose.dev.yaml down
+docker compose -f compose.dev.yaml up --build

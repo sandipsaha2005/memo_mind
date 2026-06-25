@@ -1,5 +1,6 @@
 import { useRef, useLayoutEffect, useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { apiFetch } from "../../utils/apiFetch";
 
 import { Box, TextField, Button, Paper, Typography } from "@mui/material";
 
@@ -37,8 +38,7 @@ const ChatPage = () => {
       ],
     }));
 
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/retrieve`, {
-      credentials: "include",
+    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/retrieve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: query, notebookId: id }),
@@ -88,8 +88,7 @@ const ChatPage = () => {
       formData.append("file", file);
     }
 
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ingest`, {
-      credentials: "include",
+    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/ingest`, {
       method: "POST",
       body: formData,
     });
@@ -103,11 +102,8 @@ const ChatPage = () => {
 
   useEffect(() => {
     const fetchChats = async () => {
-      const res = await fetch(
+      const res = await apiFetch(
         `${import.meta.env.VITE_API_URL}/api/notebook/get/${id}`,
-        {
-          credentials: "include",
-        },
       );
 
       const resBody = await res.json();

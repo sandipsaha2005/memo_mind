@@ -8,16 +8,13 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    console.log(import.meta.env.VITE_API_URL);
-    
     const res = await fetch(`${import.meta.env.VITE_API_URL}/login`,
       { method: 'POST', body: JSON.stringify({ email, password }), credentials: "include" }
     )
-    console.log(res.headers.getSetCookie());
+    
     const resBody = await res.json();
-
-
     if (resBody.success) {
+      localStorage.setItem("isLoggedIn", "true");
       navigate("/")
     }
   };

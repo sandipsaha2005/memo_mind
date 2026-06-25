@@ -1,4 +1,5 @@
 import UploadForm from "../../components/form/UploadForm";
+import { apiFetch } from "../../utils/apiFetch";
 
 const CreateNoteBook = () => {
   const handleCreate = async (text: string, file?: File) => {
@@ -8,7 +9,7 @@ const CreateNoteBook = () => {
       formData.append("file", file);
     }
 
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ingest`, { credentials: 'include', body: formData });
+    const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/ingest`, { method: "POST", body: formData });
     const resBody = await res.json();
     console.log(resBody);
   };

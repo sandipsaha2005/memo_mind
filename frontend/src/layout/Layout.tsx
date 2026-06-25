@@ -6,7 +6,7 @@ const Layout = () => {
     <Container maxWidth="lg">
       <Box sx={{ py: 4 }} >
         <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-          Notebook AI
+          Notebook AII
         </Typography>
       </Box>
       <Outlet />

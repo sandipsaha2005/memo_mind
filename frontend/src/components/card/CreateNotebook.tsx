@@ -12,6 +12,7 @@ import {
 
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { apiFetch } from "../../utils/apiFetch";
 
 const DialogComponent = ({
   open,
@@ -29,10 +30,9 @@ const DialogComponent = ({
   const handleCreate = async () => {
     if (!name.trim()) return;
 
-    const res = await fetch(
+    const res = await apiFetch(
       `${import.meta.env.VITE_API_URL}/api/notebook/create`,
       {
-        credentials: "include",
         method: "POST",
         body: JSON.stringify({ name }),
       },

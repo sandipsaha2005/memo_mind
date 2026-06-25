@@ -15,6 +15,7 @@ import CreateNotebookCard from "../../components/card/CreateNotebook";
 import type { Notebook } from "../../types/notebook";
 
 import { useEffect, useMemo, useState } from "react";
+import { apiFetch } from "../../utils/apiFetch";
 
 const HomePage = () => {
   const [notebooks, setNoteBooks] = useState<Notebook[]>([]);
@@ -22,11 +23,8 @@ const HomePage = () => {
   const [search, setSearch] = useState("");
 
   const handleDeleteNoteBook = async (id: string) => {
-    const res = await fetch(
+    const res = await apiFetch(
       `${import.meta.env.VITE_API_URL}/api/notebook/delete/${id}`,
-      {
-        credentials: "include",
-      },
     );
 
     const resBody = await res.json();
@@ -36,11 +34,8 @@ const HomePage = () => {
 
   useEffect(() => {
     const fetchNotebooks = async () => {
-      const res = await fetch(
+      const res = await apiFetch(
         `${import.meta.env.VITE_API_URL}/api/notebook/get-all`,
-        {
-          credentials: "include",
-        },
       );
 
       const resBody = await res.json();
