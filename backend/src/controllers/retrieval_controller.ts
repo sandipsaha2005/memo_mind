@@ -13,7 +13,7 @@ export class RetrievalController {
   async retrieve(body: RequestBody, userId: string) {
     let i = 0;
     const chunks = [];
-    chunks.push(...await this.search(body, userId));
+    chunks.push(...(await this.search(body, userId)));
     const evalRes = await this.evaluateChunks(chunks, body.text);
 
     while (!evalRes.sufficient && i < 3) {
@@ -27,7 +27,7 @@ export class RetrievalController {
           notebookId: body.notebookId,
         };
 
-        chunks.push(...await this.search(payload, userId));
+        chunks.push(...(await this.search(payload, userId)));
       }
       i++;
     }
@@ -37,7 +37,8 @@ export class RetrievalController {
 
   async search(body: RequestBody, userId: string) {
     const tokenizedQuery = tokenize(body.text);
-    const chunksToEmbed = tokenizedQuery.length > 0 ? tokenizedQuery : [body.text.trim()];
+    const chunksToEmbed =
+      tokenizedQuery.length > 0 ? tokenizedQuery : [body.text.trim()];
     const queryEmbeddings = await generate(chunksToEmbed);
 
     const results = await this.documents.query({
@@ -66,8 +67,7 @@ export class RetrievalController {
         messages: [
           {
             role: "system",
-            content:
-              `You are an evaluator. Given a question and some context chunks,
+            content: `You are an evaluator. Given a question and some context chunks,
           decide if the chunks contain enough information to answer the question.
           
           Respond ONLY in this JSON format, nothing else:
@@ -89,6 +89,11 @@ export class RetrievalController {
     });
 
     const text = completion.choices[0].message.content;
-    return JSON.parse(text);
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      console.log(error);
+      return { sufficient: false, followUpQuery: [question] };
+    }
   }
 }
