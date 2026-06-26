@@ -15,3 +15,9 @@ export interface Source {
   type: "file" | "text";
   pending?: boolean;
 }
+
+export interface NotebookDetail {
+  sources: Source[];
+  interactions: Message[];
+  initialIngestDone: boolean;
+}

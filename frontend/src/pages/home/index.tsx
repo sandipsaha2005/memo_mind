@@ -12,39 +12,18 @@ import SearchIcon from "@mui/icons-material/Search";
 import NotebookCard from "../../components/card/NoteBookCard";
 import CreateNotebookCard from "../../components/card/CreateNotebook";
 
-import type { Notebook } from "../../types/notebook";
-
-import { useEffect, useMemo, useState } from "react";
-import { apiFetch } from "../../utils/apiFetch";
+import { useMemo, useState } from "react";
+import { useNotebooks, useDeleteNotebook } from "../../api/notebooks";
 
 const HomePage = () => {
-  const [notebooks, setNoteBooks] = useState<Notebook[]>([]);
+  const { data: notebooks = [] } = useNotebooks();
+  const deleteNotebook = useDeleteNotebook();
 
   const [search, setSearch] = useState("");
 
-  const handleDeleteNoteBook = async (id: string) => {
-    const res = await apiFetch(
-      `${import.meta.env.VITE_API_URL}/api/notebook/delete/${id}`,
-    );
-
-    const resBody = await res.json();
-    const deleteNoteBookId = resBody?.data?._id;
-    setNoteBooks(prev => prev.filter((n) => n._id !== deleteNoteBookId))
-  }
-
-  useEffect(() => {
-    const fetchNotebooks = async () => {
-      const res = await apiFetch(
-        `${import.meta.env.VITE_API_URL}/api/notebook/get-all`,
-      );
-
-      const resBody = await res.json();
-
-      setNoteBooks(resBody?.data || []);
-    };
-
-    fetchNotebooks();
-  }, []);
+  const handleDeleteNoteBook = (id: string) => {
+    deleteNotebook.mutate(id);
+  };
 
   const filteredNotebooks = useMemo(() => {
     return notebooks.filter((nb) =>

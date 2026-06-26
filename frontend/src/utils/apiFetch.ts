@@ -1,5 +1,7 @@
+import { useAuthStore } from "../store/authStore";
+
 const handleUnauthorized = () => {
-  localStorage.removeItem("isLoggedIn");
+  useAuthStore.getState().logout();
   window.location.replace("/login");
 };
 

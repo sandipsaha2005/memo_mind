@@ -6,26 +6,26 @@ import ChatMessage from "../../components/chat/Message";
 import UploadForm from "../../components/form/UploadForm";
 import SourcesPanel from "../../components/card/SourcesPanel";
 import { apiFetch } from "../../utils/apiFetch";
+import { useNotebook, useIngestSource } from "../../api/notebooks";
 import type { Message, Source } from "../../types/notebook";
 
 const ChatPage = () => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const { id } = useParams();
+  const notebookId = id ?? "";
 
-  const [chatState, setChatState] = useState<{
-    messages: Message[];
-    uploadOpen: boolean;
-    sources: Source[];
-    sidebarCollapsed: boolean;
-  }>({
-    messages: [],
-    uploadOpen: false,
-    sources: [],
-    sidebarCollapsed: false,
-  });
+  const { data: notebook } = useNotebook(notebookId);
+  const ingest = useIngestSource(notebookId);
 
+  const sources = notebook?.sources ?? [];
+
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const seededRef = useRef<string | undefined>(undefined);
 
   const renderStream = async (
     stream: ReadableStream<Uint8Array<ArrayBuffer>>,
@@ -51,11 +51,11 @@ const ChatPage = () => {
             setIsLoading(false);
             firstChunk = false;
           }
-          setChatState((prev) => {
-            const msgs = [...prev.messages];
+          setMessages((prev) => {
+            const msgs = [...prev];
             const last = msgs[msgs.length - 1];
             msgs[msgs.length - 1] = { ...last, content: last.content + data };
-            return { ...prev, messages: msgs };
+            return msgs;
           });
         }
       }
@@ -70,14 +70,11 @@ const ChatPage = () => {
     const query = input;
     setInput("");
 
-    setChatState((prev) => ({
+    setMessages((prev) => [
       ...prev,
-      messages: [
-        ...prev.messages,
-        { content: query, type: "query" },
-        { content: "", type: "response" },
-      ],
-    }));
+      { content: query, type: "query" },
+      { content: "", type: "response" },
+    ]);
 
     setIsLoading(true);
 
@@ -90,41 +87,20 @@ const ChatPage = () => {
     renderStream(res.body!);
   };
 
-  const handleClose = () => {
-    setChatState((prev) => ({
-      ...prev,
-      uploadOpen: false,
-    }));
-  };
+  const handleClose = () => setUploadOpen(false);
 
-  const handleOpenUpload = () => {
-    setChatState((prev) => ({
-      ...prev,
-      uploadOpen: true,
-    }));
-  };
+  const handleOpenUpload = () => setUploadOpen(true);
 
-  const handleToggleSidebar = () => {
-    setChatState((prev) => ({
-      ...prev,
-      sidebarCollapsed: !prev.sidebarCollapsed,
-    }));
-  };
+  const handleToggleSidebar = () => setSidebarCollapsed((prev) => !prev);
 
-  const handleCreate = async (
-    text: string,
-    file?: File,
-    sourceName?: string,
-  ) => {
+  const handleCreate = (text: string, file?: File, sourceName?: string) => {
     const sourceId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
     let resolvedName: string;
     if (file) {
       resolvedName = sourceName || file.name;
     } else {
-      const textCount = chatState.sources.filter(
-        (s) => s.type === "text",
-      ).length;
+      const textCount = sources.filter((s) => s.type === "text").length;
       resolvedName = sourceName || `Text ${textCount + 1}`;
     }
 
@@ -135,87 +111,37 @@ const ChatPage = () => {
       pending: true,
     };
 
-    setChatState((prev) => ({
-      ...prev,
-      uploadOpen: false,
-      sources: [...prev.sources, optimisticSource],
-    }));
-
     const formData = new FormData();
-
     formData.append("text", text);
     formData.append("notebookId", id!);
     formData.append("sourceName", resolvedName);
 
     if (file) {
-      console.log("file present", file);
-
       formData.append("file", file);
     }
 
-    try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/ingest`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const resBody = await res.json();
-
-      if (resBody.success) {
-        setChatState((prev) => ({
-          ...prev,
-          sources: prev.sources.map((s) =>
-            s.id === sourceId ? { ...s, pending: false } : s,
-          ),
-        }));
-      } else {
-        throw new Error(resBody.message || "Ingest failed");
-      }
-    } catch {
-      setChatState((prev) => ({
-        ...prev,
-        sources: prev.sources.filter((s) => s.id !== sourceId),
-      }));
-    }
+    setUploadOpen(false);
+    ingest.mutate({ formData, optimisticSource });
   };
 
   useEffect(() => {
-    const fetchChats = async () => {
-      const res = await apiFetch(
-        `${import.meta.env.VITE_API_URL}/api/notebook/get/${id}`,
-      );
-
-      const resBody = await res.json();
-
-      const sources: Source[] = (resBody?.data?.sources || []).map(
-        (s: { name: string; type: "file" | "text" }, i: number) => ({
-          id: `${i}-${s.name}`,
-          name: s.name,
-          type: s.type,
-        }),
-      );
-
-      setChatState({
-        messages: resBody?.data?.interactions || [],
-        uploadOpen: !resBody?.data?.initialIngestDone,
-        sources,
-        sidebarCollapsed: false,
-      });
-    };
-
-    fetchChats();
-  }, [id]);
+    if (notebook && seededRef.current !== id) {
+      setMessages(notebook.interactions);
+      setUploadOpen(!notebook.initialIngestDone);
+      seededRef.current = id;
+    }
+  }, [notebook, id]);
 
   useLayoutEffect(() => {
     bottomRef.current?.scrollIntoView({
       behavior: "smooth",
     });
-  }, [chatState.messages]);
+  }, [messages]);
 
   return (
     <>
       <UploadForm
-        open={chatState.uploadOpen}
+        open={uploadOpen}
         handleClose={handleClose}
         onSubmit={handleCreate}
       />
@@ -232,8 +158,8 @@ const ChatPage = () => {
         }}
       >
         <SourcesPanel
-          sources={chatState.sources}
-          collapsed={chatState.sidebarCollapsed}
+          sources={sources}
+          collapsed={sidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
           onAdd={handleOpenUpload}
         />
@@ -276,7 +202,7 @@ const ChatPage = () => {
               bgcolor: "#fafafa",
             }}
           >
-            {chatState.messages.length === 0 && (
+            {messages.length === 0 && (
               <Box
                 sx={{
                   height: "100%",
@@ -297,13 +223,13 @@ const ChatPage = () => {
               </Box>
             )}
 
-            {chatState.messages.map((msg, i) => (
+            {messages.map((msg, i) => (
               <ChatMessage
                 key={i}
                 message={msg}
                 loading={
                   isLoading &&
-                  i === chatState.messages.length - 1 &&
+                  i === messages.length - 1 &&
                   msg.type === "response"
                 }
               />

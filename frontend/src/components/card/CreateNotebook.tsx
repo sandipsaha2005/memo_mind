@@ -12,7 +12,7 @@ import {
 
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { apiFetch } from "../../utils/apiFetch";
+import { useCreateNotebook } from "../../api/notebooks";
 
 const DialogComponent = ({
   open,
@@ -26,25 +26,17 @@ const DialogComponent = ({
   const [name, setName] = useState("");
 
   const navigate = useNavigate();
+  const createNotebook = useCreateNotebook();
 
-  const handleCreate = async () => {
+  const handleCreate = () => {
     if (!name.trim()) return;
 
-    const res = await apiFetch(
-      `${import.meta.env.VITE_API_URL}/api/notebook/create`,
-      {
-        method: "POST",
-        body: JSON.stringify({ name }),
+    createNotebook.mutate(name, {
+      onSuccess: (newId) => {
+        setOpen(false);
+        navigate(`/notebook/${newId}`);
       },
-    );
-
-    const resBody = await res.json();
-
-    if (resBody.success) {
-      setOpen(false);
-
-      navigate(`/notebook/${resBody.data}`);
-    }
+    });
   };
 
   return (
@@ -104,6 +96,7 @@ const DialogComponent = ({
         <Button
           onClick={handleCreate}
           variant="contained"
+          disabled={createNotebook.isPending}
           sx={{
             borderRadius: "12px",
             textTransform: "none",
@@ -111,7 +104,7 @@ const DialogComponent = ({
             boxShadow: "none",
           }}
         >
-          Create
+          {createNotebook.isPending ? "Creating..." : "Create"}
         </Button>
       </DialogActions>
     </Dialog>
