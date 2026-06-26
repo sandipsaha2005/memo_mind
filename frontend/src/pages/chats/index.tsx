@@ -25,12 +25,14 @@ const ChatPage = () => {
   });
 
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const renderStream = async (
     stream: ReadableStream<Uint8Array<ArrayBuffer>>,
   ) => {
     const reader = stream.getReader();
     const decoder = new TextDecoder();
+    let firstChunk = true;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -45,6 +47,10 @@ const ChatPage = () => {
         const data = lines.find((l) => l.startsWith("data: "))?.slice(6);
 
         if (eventType === "content" && data) {
+          if (firstChunk) {
+            setIsLoading(false);
+            firstChunk = false;
+          }
           setChatState((prev) => {
             const msgs = [...prev.messages];
             const last = msgs[msgs.length - 1];
@@ -54,6 +60,8 @@ const ChatPage = () => {
         }
       }
     }
+
+    setIsLoading(false);
   };
 
   const handleSend = async () => {
@@ -70,6 +78,8 @@ const ChatPage = () => {
         { content: "", type: "response" },
       ],
     }));
+
+    setIsLoading(true);
 
     const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/retrieve`, {
       method: "POST",
@@ -288,7 +298,15 @@ const ChatPage = () => {
             )}
 
             {chatState.messages.map((msg, i) => (
-              <ChatMessage key={i} message={msg} />
+              <ChatMessage
+                key={i}
+                message={msg}
+                loading={
+                  isLoading &&
+                  i === chatState.messages.length - 1 &&
+                  msg.type === "response"
+                }
+              />
             ))}
 
             <div ref={bottomRef} />
